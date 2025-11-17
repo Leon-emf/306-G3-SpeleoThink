@@ -97,6 +97,16 @@ L'ensemble de la documentation complète est disponible dans le dossier `/docume
 
 ---
 
+## RELEASE
+
+Chaque semaine, une release est créée 
+
+Terminal VS Code pour le tag et le push : 
+```bash
+git tag -a S1 -m "Release S1"
+git push origin S1
+```
+---
 
 ## 📬 Contact
 
