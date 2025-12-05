@@ -54,10 +54,9 @@ Chaque membre participe activement à la conception, au développement et à la 
 
 Vous pouvez ajouter ici les noms des membres :
 
-* Membre 1
-* Membre 2
-* Membre 3
-* Membre 4
+* Leon Fejzaj
+* Lorenzo Magliani
+* Jules Crausaz
 
 ---
 
