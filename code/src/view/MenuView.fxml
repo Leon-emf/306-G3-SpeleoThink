@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="322.0" prefWidth="510.0" styleClass="darktheme" stylesheets="@../resources/css/view.css" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="api_robot7links_test.ctrl.MenuViewController">
+   <center>
+      <HBox BorderPane.alignment="CENTER">
+         <BorderPane.margin>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </BorderPane.margin>
+         <children>
+            <VBox alignment="CENTER" prefHeight="170.0" prefWidth="530.0" spacing="10.0" styleClass="conteneur">
+               <children>
+                  <Button id="plug-in" contentDisplay="TOP" mnemonicParsing="false" onAction="#connecterRobot" prefHeight="40.0" prefWidth="699.0" text="Se connecter à un robot">
+                     <font>
+                        <Font size="19.0" />
+                     </font>
+                  </Button>
+                  <Button id="wifi" contentDisplay="TOP" mnemonicParsing="false" onAction="#initialiserRobot" prefHeight="40.0" prefWidth="574.0" text="Initialiser un robot">
+                     <font>
+                        <Font size="19.0" />
+                     </font>
+                  </Button>
+                  <Button id="emergencyExit" contentDisplay="TOP" mnemonicParsing="false" onAction="#quitter" prefHeight="25.0" prefWidth="720.0" text="Quitter" textAlignment="CENTER">
+                     <font>
+                        <Font size="19.0" />
+                     </font>
+                  </Button>
+               </children>
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+            </VBox>
+         </children>
+      </HBox>
+   </center>
+   <top>
+      <VBox alignment="CENTER">
+         <children>
+            <Label text="API Robot 7Links - Application demo">
+               <font>
+                  <Font size="29.0" />
+               </font>
+            </Label>
+         </children>
+      </VBox>
+   </top>
+</BorderPane>
