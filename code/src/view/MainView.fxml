@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="847.0" prefWidth="1097.0" styleClass="darktheme" stylesheets="@../resources/css/view.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="api_robot7links_test.ctrl.MainViewController">
+   <center>
+      <ImageView fx:id="imgView" fitHeight="626.0" fitWidth="1138.0" pickOnBounds="true" preserveRatio="true" BorderPane.alignment="CENTER" />
+   </center>
+   <bottom>
+      <HBox alignment="CENTER" prefHeight="134.0" prefWidth="1138.0" spacing="10.0" BorderPane.alignment="CENTER">
+         <children>
+            <HBox alignment="CENTER" prefHeight="124.0" prefWidth="323.0" spacing="5.0">
+               <children>
+                  <VBox alignment="CENTER" prefHeight="124.0" prefWidth="324.0" styleClass="conteneur">
+                     <children>
+                        <HBox alignment="CENTER" prefHeight="36.0" prefWidth="354.0" spacing="3.0">
+                           <children>
+                              <Label text="\@IP robot" />
+                              <TextField fx:id="txtIp1" prefHeight="25.0" prefWidth="40.0" text="192" />
+                              <Label text="." />
+                              <TextField fx:id="txtIp2" prefHeight="25.0" prefWidth="40.0" text="168" />
+                              <Label text="." />
+                              <TextField fx:id="txtIp3" prefHeight="25.0" prefWidth="40.0" text="43" />
+                              <Label text="." />
+                              <TextField fx:id="txtIp4" prefHeight="25.0" prefWidth="40.0" text="163" />
+                           </children>
+                           <VBox.margin>
+                              <Insets left="5.0" />
+                           </VBox.margin>
+                        </HBox>
+                        <HBox alignment="CENTER" prefHeight="36.0" prefWidth="354.0" spacing="3.0">
+                           <children>
+                              <Label text="ID" />
+                              <TextField fx:id="txtId" prefHeight="25.0" prefWidth="100.0" />
+                              <Label text="PW" />
+                              <TextField fx:id="txtPw" prefHeight="25.0" prefWidth="100.0" />
+                           </children>
+                           <VBox.margin>
+                              <Insets left="5.0" />
+                           </VBox.margin>
+                        </HBox>
+                        <HBox alignment="CENTER" spacing="10.0">
+                           <children>
+                              <Button id="cross" mnemonicParsing="false" onAction="#onBtnClose" text="Fermer" />
+                              <Button id="circleQuit" fx:id="btnOnOff" mnemonicParsing="false" onAction="#onOff" text="ON" />
+                              <ProgressIndicator fx:id="loader" prefHeight="70.0" prefWidth="53.0" style="-fx-progress-color: pink;" visible="false" />
+                              <Circle fx:id="connectionIndicator" fill="#ff1111" radius="14.0" stroke="BLACK" strokeType="INSIDE" />
+                           </children>
+                           <VBox.margin>
+                              <Insets />
+                           </VBox.margin>
+                        </HBox>
+                     </children>
+                  </VBox>
+               </children>
+               <HBox.margin>
+                  <Insets bottom="5.0" left="5.0" top="5.0" />
+               </HBox.margin>
+            </HBox>
+            <HBox prefHeight="100.0" prefWidth="200.0" styleClass="conteneur">
+               <HBox.margin>
+                  <Insets bottom="5.0" top="5.0" />
+               </HBox.margin>
+               <children>
+                  <VBox alignment="CENTER" prefHeight="122.0" prefWidth="278.0" spacing="5.0">
+                     <children>
+                        <TextField fx:id="txtDire" promptText="Bonjour" />
+                        <Button id="speech" mnemonicParsing="false" onAction="#dire" text="Dire" />
+                     </children>
+                     <HBox.margin>
+                        <Insets left="5.0" right="5.0" />
+                     </HBox.margin>
+                  </VBox>
+               </children>
+            </HBox>
+            <HBox fx:id="boxCommands" alignment="CENTER" prefHeight="124.0" prefWidth="494.0" spacing="5.0" styleClass="conteneur">
+               <children>
+                  <VBox alignment="CENTER" prefHeight="92.0" prefWidth="126.0" spacing="10.0">
+                     <children>
+                        <Button id="house" mnemonicParsing="false" onAction="#dock" prefHeight="40.0" prefWidth="135.0" text="Dock" />
+                        <Button id="emergencyExit" mnemonicParsing="false" onAction="#undock" prefHeight="40.0" prefWidth="146.0" text="Undock" />
+                     </children>
+                  </VBox>
+                  <VBox alignment="CENTER" prefHeight="71.0" prefWidth="37.0" spacing="5.0">
+                     <children>
+                        <Label prefHeight="17.0" prefWidth="26.0" text="Tête" />
+                        <Button mnemonicParsing="false" onAction="#headUp" prefHeight="25.0" prefWidth="51.0" text="^" />
+                        <Button mnemonicParsing="false" onAction="#headNeutre" prefHeight="25.0" prefWidth="38.0" text="0" />
+                        <Button mnemonicParsing="false" onAction="#headDown" prefHeight="25.0" prefWidth="94.0" text="v" />
+                     </children>
+                  </VBox>
+                  <VBox alignment="CENTER">
+                     <children>
+                        <GridPane prefHeight="100.0" prefWidth="87.0">
+                          <columnConstraints>
+                            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                              <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                          </columnConstraints>
+                          <rowConstraints>
+                            <RowConstraints maxHeight="74.0" minHeight="10.0" prefHeight="26.0" vgrow="SOMETIMES" />
+                            <RowConstraints maxHeight="62.0" minHeight="8.0" prefHeight="36.0" vgrow="SOMETIMES" />
+                            <RowConstraints maxHeight="75.0" minHeight="10.0" prefHeight="23.0" vgrow="SOMETIMES" />
+                          </rowConstraints>
+                           <children>
+                              <Button mnemonicParsing="false" onAction="#neutre" prefHeight="89.0" prefWidth="57.0" text="0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                              <Button mnemonicParsing="false" onAction="#gauche" prefHeight="69.0" prefWidth="40.0" text="←" GridPane.rowIndex="1" />
+                              <Button mnemonicParsing="false" onAction="#droite" prefHeight="121.0" prefWidth="143.0" text="→" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                              <Button mnemonicParsing="false" onAction="#avant" prefHeight="71.0" prefWidth="64.0" text="↑" GridPane.columnIndex="1">
+                                 <font>
+                                    <Font name="System Bold" size="12.0" />
+                                 </font>
+                              </Button>
+                              <Button mnemonicParsing="false" onAction="#arriere" prefHeight="66.0" prefWidth="51.0" text="↓" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                              <Button mnemonicParsing="false" onAction="#avantGauche" prefHeight="49.0" prefWidth="39.0" text="↖" />
+                              <Button mnemonicParsing="false" onAction="#avantDroite" prefHeight="111.0" prefWidth="69.0" text="↗" GridPane.columnIndex="2" />
+                           </children>
+                        </GridPane>
+                     </children>
+                  </VBox>
+                  <Button id="lightBulb" mnemonicParsing="false" onAction="#led" text="LED" />
+                  <Button id="jumpArrow" mnemonicParsing="false" onAction="#standUp" prefHeight="41.0" prefWidth="119.0" text="Se relever" />
+               </children>
+               <HBox.margin>
+                  <Insets bottom="5.0" right="5.0" top="5.0" />
+               </HBox.margin>
+            </HBox>
+         </children>
+         <BorderPane.margin>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </BorderPane.margin>
+      </HBox>
+   </bottom>
+   <top>
+      <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="100.0" BorderPane.alignment="CENTER">
+         <children>
+            <Label fx:id="lblBatterieRover" alignment="CENTER" text="Batterie rover : " />
+            <Label fx:id="lblQualiteStreaming" text="Qualité du streaming : " />
+            <Label fx:id="lblHostName">
+               <font>
+                  <Font size="27.0" />
+               </font>
+            </Label>
+            <Label fx:id="lblBatterieManette" text="Batterie manette : " />
+         </children>
+      </HBox>
+   </top>
+</BorderPane>
