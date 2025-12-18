@@ -1,4 +1,4 @@
-# SCRUM : Daily Scrum du ... 2025
+# SCRUM : Daily Scrum du 12.12.2025 2025
 
 ## Ce qui a été fait ce matin
 
