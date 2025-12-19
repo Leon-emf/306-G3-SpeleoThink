@@ -16,7 +16,7 @@ public class API_Robot7Links_Test extends Application {
     @Override
     public void start(Stage stage) throws Exception {
         WindowManager.c = this.getClass();
-        Fenetre f = WindowManager.creerFenetre("view/MenuView.fxml", "Application Demo 7Links");
+        Fenetre f = WindowManager.creerFenetre("../view/MenuView.fxml", "Application Demo 7Links");
         MenuViewController ctrl = (MenuViewController) f.getCtrl();
         f.getStage().setOnCloseRequest(e -> ctrl.onClose(e));
         f.show();
