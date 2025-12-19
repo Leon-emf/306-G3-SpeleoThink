@@ -13,6 +13,8 @@
         "code/lib/openjfx_17_0_8_windows_x64/lib/javafx.media.jar",
         "code/lib/openjfx_17_0_8_windows_x64/lib/javafx.swing.jar",
         "code/lib/openjfx_17_0_8_windows_x64/lib/javafx.web.jar",
-        "code/lib/openjfx_17_0_8_windows_x64/lib/javafx-swt.jar"
+        "code/lib/openjfx_17_0_8_windows_x64/lib/javafx-swt.jar",
+        "code/lib/jinput-2.0.10.jar",
+        "code/lib/jinput-platform-2.0.7-natives-windows.jar"
     ]
 }

@@ -4,10 +4,19 @@ import bean.XboxButton;
 import ctrl.ICtrlXboxInput;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import net.java.games.input.Component;
+import net.java.games.input.Controller;
+import net.java.games.input.ControllerEnvironment;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * Worker thread that monitors Xbox controller input and notifies the controller
- * Uses JavaFX's gamepad support through the scene graph
+ * Uses JInput library for physical gamepad support with keyboard fallback
  * 
  * @author SpeleoThink Team
  */
@@ -15,17 +24,225 @@ public class WrkXboxController extends Thread {
     
     private volatile boolean running;
     private final ICtrlXboxInput refCtrl;
-    private XboxButton xboxButton;
+    private XboxButton xboxButton;          // Combined state (keyboard + gamepad)
+    private XboxButton keyboardState;       // Keyboard-only state
     private static final int POLL_RATE = 50; // milliseconds
     
     // Previous state for button press detection
     private XboxButton previousState;
     
+    // JInput controller
+    private boolean jinputReady = false;
+    private Controller gamepad = null;
+    
+    /**
+     * Extract native libraries from jinput-platform jar to temp folder
+     */
+    private static void extractNatives() {
+        try {
+            String[] possiblePaths = {
+                "lib/jinput-platform-2.0.7-natives-windows.jar",
+                "code/lib/jinput-platform-2.0.7-natives-windows.jar"
+            };
+            
+            File nativesJar = null;
+            for (String path : possiblePaths) {
+                File f = new File(path);
+                if (f.exists()) {
+                    nativesJar = f;
+                    break;
+                }
+            }
+            
+            if (nativesJar == null) {
+                System.out.println("[JINPUT] Natives jar not found");
+                return;
+            }
+            
+            File tempDir = new File(System.getProperty("java.io.tmpdir"), "jinput-natives");
+            tempDir.mkdirs();
+            
+            // Set library path for JInput
+            System.setProperty("net.java.games.input.librarypath", tempDir.getAbsolutePath());
+            
+            try (JarFile jar = new JarFile(nativesJar)) {
+                var entries = jar.entries();
+                while (entries.hasMoreElements()) {
+                    JarEntry entry = entries.nextElement();
+                    if (entry.getName().endsWith(".dll")) {
+                        File outFile = new File(tempDir, new File(entry.getName()).getName());
+                        if (!outFile.exists()) {
+                            try (InputStream in = jar.getInputStream(entry);
+                                 FileOutputStream out = new FileOutputStream(outFile)) {
+                                byte[] buffer = new byte[4096];
+                                int len;
+                                while ((len = in.read(buffer)) > 0) {
+                                    out.write(buffer, 0, len);
+                                }
+                            }
+                            System.out.println("[JINPUT] Extracted: " + outFile.getName());
+                        }
+                    }
+                }
+            }
+            System.out.println("[JINPUT] Native libraries ready at: " + tempDir.getAbsolutePath());
+        } catch (Exception e) {
+            System.out.println("[JINPUT] Failed to extract natives: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Initialize JInput and find gamepad controller
+     */
+    private void initJInput() {
+        try {
+            // Extract native DLLs first
+            extractNatives();
+            
+            // Get all controllers
+            Controller[] controllers = ControllerEnvironment.getDefaultEnvironment().getControllers();
+            System.out.println("[JINPUT] Found " + controllers.length + " controller(s)");
+            
+            for (Controller controller : controllers) {
+                Controller.Type type = controller.getType();
+                System.out.println("[JINPUT] - " + controller.getName() + " (Type: " + type + ")");
+                
+                if (type == Controller.Type.GAMEPAD || type == Controller.Type.STICK) {
+                    gamepad = controller;
+                    jinputReady = true;
+                    System.out.println("[JINPUT] *** Selected: " + controller.getName() + " ***");
+                    
+                    // List components for debugging
+                    System.out.println("[JINPUT] Components:");
+                    for (Component comp : controller.getComponents()) {
+                        System.out.println("[JINPUT]   - " + comp.getName() + 
+                            " (ID: " + comp.getIdentifier() + ", Analog: " + comp.isAnalog() + ")");
+                    }
+                    break;
+                }
+            }
+            
+            if (!jinputReady) {
+                System.out.println("[JINPUT] No gamepad found - using keyboard fallback");
+            }
+        } catch (Throwable t) {
+            System.out.println("[JINPUT] Init failed: " + t.getClass().getSimpleName() + ": " + t.getMessage());
+            t.printStackTrace();
+            jinputReady = false;
+        }
+    }
+    
+    /**
+     * Poll gamepad and update XboxButton state
+     */
+    private void pollJInput() {
+        if (!jinputReady || gamepad == null) return;
+        
+        try {
+            if (!gamepad.poll()) {
+                System.out.println("[JINPUT] Gamepad disconnected!");
+                jinputReady = false;
+                return;
+            }
+            
+            // Note: xboxButton is already reset in run() loop
+            
+            for (Component comp : gamepad.getComponents()) {
+                String name = comp.getName().toLowerCase();
+                Component.Identifier id = comp.getIdentifier();
+                float value = comp.getPollData();
+                boolean isAnalog = comp.isAnalog();
+                
+                // Axes
+                if (id == Component.Identifier.Axis.X) {
+                    xboxButton.setLeftStickX(value);
+                } else if (id == Component.Identifier.Axis.Y) {
+                    xboxButton.setLeftStickY(value);
+                } else if (id == Component.Identifier.Axis.RX) {
+                    xboxButton.setRightStickX(value);
+                } else if (id == Component.Identifier.Axis.RY) {
+                    xboxButton.setRightStickY(value);
+                } else if (id == Component.Identifier.Axis.Z) {
+                    // Often left trigger
+                    xboxButton.setLeftTrigger((value + 1f) / 2f);
+                } else if (id == Component.Identifier.Axis.RZ) {
+                    // Often right trigger
+                    xboxButton.setRightTrigger((value + 1f) / 2f);
+                } else if (id == Component.Identifier.Axis.POV) {
+                    // D-Pad as POV hat
+                    if (value == Component.POV.UP) {
+                        xboxButton.setdPadUp(true);
+                    } else if (value == Component.POV.DOWN) {
+                        xboxButton.setdPadDown(true);
+                    } else if (value == Component.POV.LEFT) {
+                        xboxButton.setdPadLeft(true);
+                    } else if (value == Component.POV.RIGHT) {
+                        xboxButton.setdPadRight(true);
+                    } else if (value == Component.POV.UP_LEFT) {
+                        xboxButton.setdPadUp(true);
+                        xboxButton.setdPadLeft(true);
+                    } else if (value == Component.POV.UP_RIGHT) {
+                        xboxButton.setdPadUp(true);
+                        xboxButton.setdPadRight(true);
+                    } else if (value == Component.POV.DOWN_LEFT) {
+                        xboxButton.setdPadDown(true);
+                        xboxButton.setdPadLeft(true);
+                    } else if (value == Component.POV.DOWN_RIGHT) {
+                        xboxButton.setdPadDown(true);
+                        xboxButton.setdPadRight(true);
+                    }
+                }
+                
+                // Buttons (digital)
+                if (!isAnalog && id instanceof Component.Identifier.Button) {
+                    boolean pressed = value > 0.5f;
+                    String buttonId = id.getName();
+                    
+                    // Debug: log button presses
+                    if (pressed) {
+                        System.out.println("[JINPUT] Button pressed: id=" + buttonId + ", name=" + name);
+                    }
+                    
+                    // Map by button index (most reliable for Xbox controllers)
+                    switch (buttonId) {
+                        case "0": xboxButton.setButtonA(pressed); break;
+                        case "1": xboxButton.setButtonB(pressed); break;
+                        case "2": xboxButton.setButtonX(pressed); break;
+                        case "3": xboxButton.setButtonY(pressed); break;
+                        case "4": xboxButton.setLeftBumper(pressed); break;
+                        case "5": xboxButton.setRightBumper(pressed); break;
+                        case "6": xboxButton.setBack(pressed); break;
+                        case "7": xboxButton.setStart(pressed); break;
+                        case "8": xboxButton.setLeftStickButton(pressed); break;
+                        case "9": xboxButton.setRightStickButton(pressed); break;
+                        default:
+                            // Fallback to name matching for non-standard controllers
+                            if (name.equals("a") || name.equals("button a")) {
+                                xboxButton.setButtonA(pressed);
+                            } else if (name.equals("b") || name.equals("button b")) {
+                                xboxButton.setButtonB(pressed);
+                            } else if (name.equals("x") || name.equals("button x")) {
+                                xboxButton.setButtonX(pressed);
+                            } else if (name.equals("y") || name.equals("button y")) {
+                                xboxButton.setButtonY(pressed);
+                            }
+                            break;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("[JINPUT] Poll error: " + e.getMessage());
+            jinputReady = false;
+        }
+    }
+    
     public WrkXboxController(ICtrlXboxInput refCtrl) {
         super("Thread Xbox Controller");
         this.refCtrl = refCtrl;
         this.xboxButton = new XboxButton();
+        this.keyboardState = new XboxButton();
         this.previousState = new XboxButton();
+        initJInput();
     }
     
     public void setRunning(boolean running) {
@@ -38,37 +255,38 @@ public class WrkXboxController extends Thread {
     
     /**
      * Updates button state from keyboard input (for testing without controller)
-     * Can be called from JavaFX thread
+     * Can be called from JavaFX thread - updates separate keyboard state
      */
     public void updateFromKeyboard(KeyEvent event, boolean pressed) {
         if (event.getCode() == KeyCode.W || event.getCode() == KeyCode.UP) {
-            xboxButton.setLeftStickY(pressed ? -1.0 : 0.0);
+            keyboardState.setLeftStickY(pressed ? -1.0 : 0.0);
         } else if (event.getCode() == KeyCode.S || event.getCode() == KeyCode.DOWN) {
-            xboxButton.setLeftStickY(pressed ? 1.0 : 0.0);
+            keyboardState.setLeftStickY(pressed ? 1.0 : 0.0);
         } else if (event.getCode() == KeyCode.A || event.getCode() == KeyCode.LEFT) {
-            xboxButton.setLeftStickX(pressed ? -1.0 : 0.0);
+            keyboardState.setLeftStickX(pressed ? -1.0 : 0.0);
         } else if (event.getCode() == KeyCode.D || event.getCode() == KeyCode.RIGHT) {
-            xboxButton.setLeftStickX(pressed ? 1.0 : 0.0);
+            keyboardState.setLeftStickX(pressed ? 1.0 : 0.0);
         } else if (event.getCode() == KeyCode.SPACE) {
-            xboxButton.setButtonA(pressed);
+            keyboardState.setButtonA(pressed);
+        } else if (event.getCode() == KeyCode.F) {
+            keyboardState.setButtonB(pressed); // F = Flashlight/LED toggle
         } else if (event.getCode() == KeyCode.L) {
-            xboxButton.setButtonX(pressed);
+            keyboardState.setButtonX(pressed);
         } else if (event.getCode() == KeyCode.H) {
-            xboxButton.setButtonY(pressed);
+            keyboardState.setButtonY(pressed);
         } else if (event.getCode() == KeyCode.U) {
-            xboxButton.setdPadUp(pressed);
+            keyboardState.setdPadUp(pressed);
         } else if (event.getCode() == KeyCode.J) {
-            xboxButton.setdPadDown(pressed);
+            keyboardState.setdPadDown(pressed);
         } else if (event.getCode() == KeyCode.Q) {
-            xboxButton.setLeftBumper(pressed);
+            keyboardState.setLeftBumper(pressed);
         } else if (event.getCode() == KeyCode.E) {
-            xboxButton.setRightBumper(pressed);
+            keyboardState.setRightBumper(pressed);
         }
     }
     
     /**
      * Manual update method for gamepad values from JavaFX scene
-     * This should be called from the JavaFX application thread with actual gamepad data
      */
     public synchronized void updateGamepadState(XboxButton newState) {
         this.xboxButton = newState;
@@ -77,24 +295,57 @@ public class WrkXboxController extends Thread {
     @Override
     public void run() {
         running = true;
-        System.out.println("Xbox Controller thread started");
+        System.out.println("[XBOX] Controller thread started (JInput ready: " + jinputReady + ")");
         
         while (running) {
             _sleep(POLL_RATE);
             
-            // Notify controller of state changes
+            // Reset xboxButton state before combining inputs
+            xboxButton.reset();
+            
+            // Poll physical gamepad if available (updates xboxButton)
+            if (jinputReady) {
+                pollJInput();
+            }
+            
+            // Combine keyboard state with gamepad state
+            // Keyboard takes priority if it has input
+            combineInputs();
+            
+            // Notify controller
             if (refCtrl != null) {
                 refCtrl.onXboxInputReceived(xboxButton);
-                
-                // Check for button presses (transitions from false to true)
                 checkButtonPress();
-                
-                // Update previous state
                 copyState(xboxButton, previousState);
             }
         }
         
-        System.out.println("Xbox Controller thread stopped");
+        System.out.println("[XBOX] Controller thread stopped");
+    }
+    
+    /**
+     * Combine keyboard and gamepad inputs - keyboard takes priority when active
+     */
+    private void combineInputs() {
+        // Axes: use keyboard if it has input, otherwise use gamepad
+        if (Math.abs(keyboardState.getLeftStickX()) > 0.01) {
+            xboxButton.setLeftStickX(keyboardState.getLeftStickX());
+        }
+        if (Math.abs(keyboardState.getLeftStickY()) > 0.01) {
+            xboxButton.setLeftStickY(keyboardState.getLeftStickY());
+        }
+        
+        // Buttons: OR them together (either source can trigger)
+        if (keyboardState.isButtonA()) xboxButton.setButtonA(true);
+        if (keyboardState.isButtonB()) xboxButton.setButtonB(true);
+        if (keyboardState.isButtonX()) xboxButton.setButtonX(true);
+        if (keyboardState.isButtonY()) xboxButton.setButtonY(true);
+        if (keyboardState.isLeftBumper()) xboxButton.setLeftBumper(true);
+        if (keyboardState.isRightBumper()) xboxButton.setRightBumper(true);
+        if (keyboardState.isdPadUp()) xboxButton.setdPadUp(true);
+        if (keyboardState.isdPadDown()) xboxButton.setdPadDown(true);
+        if (keyboardState.isdPadLeft()) xboxButton.setdPadLeft(true);
+        if (keyboardState.isdPadRight()) xboxButton.setdPadRight(true);
     }
     
     /**

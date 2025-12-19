@@ -34,11 +34,29 @@ public class WrkEtatRobot extends Thread {
     @Override
     public void run() {
         running = true;
+        int logCounter = 0;
         while (running) {
-            _sleep(10);
-            refCtrl.onBatteryReceived(robot.getBatteryLevel());
-            refCtrl.onImageReceived(robot.getLastImage());
-            refCtrl.onAudioReceived(robot.getLastAudio());
+            _sleep(100); // Reduced frequency to avoid spam
+            
+            // Only get battery/image/audio if connected
+            if (robot.isConnected()) {
+                // Try both methods to get battery
+                byte batteryLevel = robot.getBatteryLevel();
+                byte batteryFromState = robot.getRobotState().getBattery();
+                
+                // Log once every 50 iterations (5 seconds)
+                if (logCounter++ % 50 == 0) {
+                    System.out.println("[BATTERY] getBatteryLevel(): " + (batteryLevel & 0xFF) + 
+                                       ", getRobotState().getBattery(): " + (batteryFromState & 0xFF));
+                }
+                
+                // Use the one that has a value (as int)
+                int actualBattery = batteryFromState != 0 ? (batteryFromState & 0xFF) : (batteryLevel & 0xFF);
+                refCtrl.onBatteryReceived(actualBattery);
+                refCtrl.onImageReceived(robot.getLastImage());
+                refCtrl.onAudioReceived(robot.getLastAudio());
+            }
+            
             if (lastConnected != robot.isConnected()) {
                 refCtrl.onConnectionStateReceived(robot.isConnected());
             }

@@ -13,6 +13,9 @@ import bean.XboxButton;
 import ch.emf.info.robot.links.Robot;
 import ch.emf.info.robot.links.exception.UnreachableRobotException;
 import ch.emf.info.robot.links.bean.RobotState;
+import ch.emf.info.robot.links.bean.Wifi;
+import ch.emf.info.robot.links.listeners.RobotListener;
+import java.util.ArrayList;
 import java.io.ByteArrayInputStream;
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -42,7 +45,7 @@ import javafx.stage.WindowEvent;
  *
  * @author AudergonV01
  */
-public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlXboxInput, Ctrl {
+public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlXboxInput, Ctrl, RobotListener {
 
     @FXML
     private TextField txtIp1;
@@ -66,6 +69,10 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
     private TextField txtDire;
     @FXML
     private Label lblHostName;
+    @FXML
+    private Label lblBatterieRover;
+    @FXML
+    private Label lblBatterieManette;
 
     private Robot robot;
     private MyRobot myRobot;
@@ -73,8 +80,8 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
     private WrkEtatRobot wrkEtatRobot;
     private WrkXboxController wrkXboxController;
     private static final int STICK_MULTIPLIER = 200;
-    private static final int MAX_SPEED = 999;
-    private boolean xboxControlEnabled = false;
+    private static final int MAX_SPEED = 2000;
+    private boolean xboxControlEnabled = true; // Enabled by default for easier testing
 
     private ToggleButton btnJoystick;
     @FXML
@@ -85,6 +92,7 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         robot = new Robot();
+        robot.setListener(this); // Register this controller as the robot listener for callbacks
         wrkEtatRobot = new WrkEtatRobot(robot, this);
         wrkEtatRobot.start();
         wrkAudio = new WrkAudio();
@@ -105,19 +113,20 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
         // Attach when the scene becomes available, even if it's created after initialize()
         boxCommands.sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene != null) {
-                newScene.addEventHandler(KeyEvent.KEY_PRESSED, this::handleKeyPressed);
-                newScene.addEventHandler(KeyEvent.KEY_RELEASED, this::handleKeyReleased);
-                // Ensure the scene can receive key events (avoid focus trapped in text fields)
-                Platform.runLater(() -> boxCommands.requestFocus());
+                attachKeyboardFilters(newScene);
             }
         });
         // If the scene is already ready, attach immediately
         Platform.runLater(() -> {
             if (boxCommands.getScene() != null) {
-                boxCommands.getScene().addEventHandler(KeyEvent.KEY_PRESSED, this::handleKeyPressed);
-                boxCommands.getScene().addEventHandler(KeyEvent.KEY_RELEASED, this::handleKeyReleased);
-                boxCommands.requestFocus();
+                attachKeyboardFilters(boxCommands.getScene());
             }
+            // Click on image to regain focus for keyboard control
+            imgView.setOnMouseClicked(e -> {
+                imgView.requestFocus();
+                System.out.println("[KEYBOARD] Focus set to image view");
+            });
+            imgView.setFocusTraversable(true);
         });
     }
     
@@ -131,6 +140,50 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
         if (wrkXboxController != null) {
             wrkXboxController.updateFromKeyboard(event, false);
         }
+    }
+    
+    /**
+     * Attach keyboard event filters to the scene.
+     * Uses EVENT FILTERS (not handlers) to intercept keys BEFORE TextField consumes them.
+     */
+    private void attachKeyboardFilters(javafx.scene.Scene scene) {
+        // Use addEventFilter to intercept events BEFORE they reach TextField
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            // Only intercept control keys, let text input pass through when in TextField
+            if (isControlKey(event.getCode())) {
+                handleKeyPressed(event);
+                event.consume(); // Prevent TextField from receiving it
+            }
+        });
+        scene.addEventFilter(KeyEvent.KEY_RELEASED, event -> {
+            if (isControlKey(event.getCode())) {
+                handleKeyReleased(event);
+                event.consume();
+            }
+        });
+        System.out.println("[KEYBOARD] Event filters attached to scene");
+    }
+    
+    /**
+     * Check if the key is a control key for the robot (not for text input)
+     */
+    private boolean isControlKey(javafx.scene.input.KeyCode code) {
+        return code == javafx.scene.input.KeyCode.W ||
+               code == javafx.scene.input.KeyCode.A ||
+               code == javafx.scene.input.KeyCode.S ||
+               code == javafx.scene.input.KeyCode.D ||
+               code == javafx.scene.input.KeyCode.UP ||
+               code == javafx.scene.input.KeyCode.DOWN ||
+               code == javafx.scene.input.KeyCode.LEFT ||
+               code == javafx.scene.input.KeyCode.RIGHT ||
+               code == javafx.scene.input.KeyCode.SPACE ||
+               code == javafx.scene.input.KeyCode.F || // LED toggle
+               code == javafx.scene.input.KeyCode.L ||
+               code == javafx.scene.input.KeyCode.H ||
+               code == javafx.scene.input.KeyCode.U ||
+               code == javafx.scene.input.KeyCode.J ||
+               code == javafx.scene.input.KeyCode.Q ||
+               code == javafx.scene.input.KeyCode.E;
     }
 
     @FXML
@@ -207,7 +260,21 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
     }
 
     @Override
-    public void onBatteryReceived(byte battery) {
+    public void onBatteryReceived(int battery) {
+        System.out.println("[BATTERY CALLBACK] Battery received: " + battery + "%");
+        Platform.runLater(() -> {
+            // Always display the battery value
+            lblBatterieRover.setText("Batterie rover : " + battery + "%");
+            
+            // Change color based on battery level
+            if (battery <= 20) {
+                lblBatterieRover.setStyle("-fx-text-fill: red;");
+            } else if (battery <= 50) {
+                lblBatterieRover.setStyle("-fx-text-fill: orange;");
+            } else {
+                lblBatterieRover.setStyle("-fx-text-fill: lime;");
+            }
+        });
     }
 
     @Override
@@ -352,16 +419,30 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
     
     // ========== Xbox Controller Interface Implementation ==========
     
+    // Track previous speeds to avoid console spam
+    private short prevLeftSpeed = 0;
+    private short prevRightSpeed = 0;
+    private boolean prevConnected = true;
+    
     @Override
     public void onXboxInputReceived(XboxButton xboxButton) {
-        if (!robot.isConnected() || !xboxControlEnabled) {
+        if (!xboxControlEnabled) {
+            return; // Silent when disabled
+        }
+
+        if (!robot.isConnected()) {
+            if (prevConnected) {
+                System.out.println("[XBOX] Robot not connected!");
+                prevConnected = false;
+            }
             return;
         }
+        prevConnected = true;
         
         // Calculate robot speeds based on left stick input
         // Y-axis: forward/backward, X-axis: turning
         double forward = -xboxButton.getLeftStickY(); // Inverted because stick Y is negative when up
-        double turn = xboxButton.getLeftStickX();
+        double turn = -xboxButton.getLeftStickX(); // INVERTED to fix left/right direction
         
         // Tank drive calculation
         // Left motor = forward - turn
@@ -380,7 +461,12 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
         short leftSpeed = (short) (leftPower * MAX_SPEED);
         short rightSpeed = (short) (rightPower * MAX_SPEED);
         
-        // Apply speeds to robot
+        // Apply speeds to robot (only log when changed)
+        if (leftSpeed != prevLeftSpeed || rightSpeed != prevRightSpeed) {
+            System.out.printf("[XBOX] speeds L:%d R:%d%n", leftSpeed, rightSpeed);
+            prevLeftSpeed = leftSpeed;
+            prevRightSpeed = rightSpeed;
+        }
         robot.setLeftSpeed(leftSpeed);
         robot.setRightSpeed(rightSpeed);
         
@@ -404,6 +490,7 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
     
     @Override
     public void onButtonAPressed() {
+        System.out.println("[XBOX] Button A pressed");
         if (robot.isConnected()) {
             robot.standUp();
         }
@@ -411,9 +498,14 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
     
     @Override
     public void onButtonBPressed() {
-        // Toggle LED
+        // Toggle LED (infrared)
+        System.out.println("[XBOX] Button B / F pressed - Toggle LED");
         if (robot.isConnected()) {
-            robot.setLedEnabled(!robot.getRobotState().isLedEnabled());
+            boolean newState = !robot.getRobotState().isLedEnabled();
+            robot.setLedEnabled(newState);
+            System.out.println("[XBOX] LED infrarouge: " + (newState ? "ON" : "OFF"));
+        } else {
+            System.out.println("[XBOX] Cannot toggle LED - robot not connected");
         }
     }
     
@@ -421,6 +513,7 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
     public void onButtonXPressed() {
         // Toggle Xbox control mode
         xboxControlEnabled = !xboxControlEnabled;
+        System.out.println("[XBOX] Mode toggle -> " + xboxControlEnabled);
         Platform.runLater(() -> {
             if (xboxControlEnabled) {
                 lblHostName.setText(myRobot.getHostname() + " [XBOX MODE]");
@@ -438,11 +531,71 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
     @Override
     public void onButtonYPressed() {
         // Emergency stop
+        System.out.println("[XBOX] Button Y pressed (STOP)");
         if (robot.isConnected()) {
             robot.setLeftSpeed((short) 0);
             robot.setRightSpeed((short) 0);
             robot.setHeadDirection(RobotState.HeadDirection.NONE);
         }
+    }
+
+    // ========== RobotListener implementation ==========
+    // These callbacks are called directly by the Robot when it receives data
+    // Note: onBatteryReceived(int), onImageReceived, onAudioReceived are shared with ICtrlEtatRobot
+    
+    @Override
+    public void onWifiScanResultReceived(ArrayList<Wifi> wifiList) {
+        System.out.println("[ROBOT LISTENER] WiFi scan result: " + wifiList.size() + " networks");
+    }
+    
+    @Override
+    public void onConnectionLost() {
+        System.out.println("[ROBOT LISTENER] Connection lost!");
+        Platform.runLater(() -> {
+            connectionIndicator.setFill(Color.RED);
+            lblBatterieRover.setText("Batterie: --");
+        });
+    }
+    
+    @Override
+    public void onConnectionEtablished() {
+        System.out.println("[ROBOT LISTENER] Connection established!");
+        Platform.runLater(() -> {
+            connectionIndicator.setFill(Color.LIME);
+        });
+    }
+    
+    @Override
+    public void onConnectionClosed() {
+        System.out.println("[ROBOT LISTENER] Connection closed");
+        Platform.runLater(() -> {
+            connectionIndicator.setFill(Color.GRAY);
+        });
+    }
+    
+    @Override
+    public void onHostNameReceived(String hostName) {
+        System.out.println("[ROBOT LISTENER] Hostname: " + hostName);
+        Platform.runLater(() -> {
+            lblHostName.setText(hostName);
+            myRobot.setHostname(hostName);
+        });
+    }
+    
+    @Override
+    public void onIdReceived(int id) {
+        System.out.println("[ROBOT LISTENER] ID received: " + id);
+        Platform.runLater(() -> {
+            txtId.setText(String.valueOf(id));
+        });
+    }
+    
+    @Override
+    public void onPwReceived(int pw) {
+        System.out.println("[ROBOT LISTENER] PW received: " + pw);
+        Platform.runLater(() -> {
+            txtPw.setText(String.valueOf(pw));
+        });
     }
 
 }
