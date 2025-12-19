@@ -16,6 +16,18 @@
 
 ## Ce qui a été fait cet après-midi
  
+### Leon
+ 
+-
+ 
+### Lorenzo
+ 
+-
+ 
+### Jules
+ 
+-
+
 ## Problèmes rencontrés
  
 -
