@@ -1,8 +1,8 @@
-# SCRUM : Daily Scrum du ... 2025
+# SCRUM : Daily Scrum du 12.12.2025 2025
 
 ## Ce qui a été fait ce matin
 
-### Léon
+### Leon
 - Kick-off
 - Aide au product backlog
 - Modification du planning
@@ -21,7 +21,7 @@
 
 ## Ce qui a été fait cet après-midi
 
-### Léon
+### Leon
 - Prise en main de la manette
 - Modification du planning
 
@@ -35,5 +35,3 @@
 
 ### Problèmes rencontrés
 - Problème de JDK et de librairie pour Lorenzo
-
- 
