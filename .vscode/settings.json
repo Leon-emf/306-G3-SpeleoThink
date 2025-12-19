@@ -1,0 +1,18 @@
+{
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "code/lib/API_Robot7Links_HSR1_HSR2.jar",
+        "code/lib/gson-2.8.5.jar",
+        "code/lib/gson-2.8.5-javadoc.jar",
+        "code/lib/gson-2.8.5-sources.jar",
+        "code/lib/voicerss_tts.jar",
+        "code/lib/openjfx_17_0_8_windows_x64/lib/javafx.base.jar",
+        "code/lib/openjfx_17_0_8_windows_x64/lib/javafx.controls.jar",
+        "code/lib/openjfx_17_0_8_windows_x64/lib/javafx.fxml.jar",
+        "code/lib/openjfx_17_0_8_windows_x64/lib/javafx.graphics.jar",
+        "code/lib/openjfx_17_0_8_windows_x64/lib/javafx.media.jar",
+        "code/lib/openjfx_17_0_8_windows_x64/lib/javafx.swing.jar",
+        "code/lib/openjfx_17_0_8_windows_x64/lib/javafx.web.jar",
+        "code/lib/openjfx_17_0_8_windows_x64/lib/javafx-swt.jar"
+    ]
+}
