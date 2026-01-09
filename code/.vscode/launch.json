@@ -6,7 +6,13 @@
             "name": "Launch JavaFX Application",
             "request": "launch",
             "mainClass": "API_Robot7Links_Test",
-            "vmArgs": "--module-path \"C:/Users/maglianil/OneDrive - EDUETATFR/Bureau/EMF/Documents EMF/Syntheses EMF/306/MVC_FXML_D400_JDK17LTS/lib/openjfx_17_0_8_windows_x64/lib\" --add-modules javafx.controls,javafx.fxml"
+            // JavaFX from this workspace
+            "vmArgs": "--module-path \"${workspaceFolder}/code/lib/openjfx_17_0_8_windows_x64/lib\" --add-modules javafx.controls,javafx.fxml",
+            // Add JInput jars to classpath
+            "classPaths": [
+                "${workspaceFolder}/code/lib/jinput-2.0.10.jar",
+                "${workspaceFolder}/code/lib/jinput-platform-2.0.7-natives-windows.jar"
+            ]
         },
     ]
 }

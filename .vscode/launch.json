@@ -1,0 +1,28 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Launcher",
+      "request": "launch",
+      "mainClass": "Launcher",
+      "projectName": "306-G3-SpeleoThink_e8698b18"
+    },
+    {
+      "type": "java",
+      "name": "Launch JavaFX Application",
+      "request": "launch",
+      "mainClass": "API_Robot7Links_Test",
+      "cwd": "${workspaceFolder}/code",
+      "modulePaths": [
+        "${workspaceFolder}/code/lib/openjfx_17_0_8_windows_x64/lib"
+      ],
+      "vmArgs": "--add-modules javafx.controls,javafx.fxml,javafx.graphics",
+      "classPaths": [
+        "${workspaceFolder}/code/bin",
+        "${workspaceFolder}/code/lib/jinput-2.0.10.jar",
+        "${workspaceFolder}/code/lib/jinput-platform-2.0.7-natives-windows.jar"
+      ]
+    }
+  ]
+}
