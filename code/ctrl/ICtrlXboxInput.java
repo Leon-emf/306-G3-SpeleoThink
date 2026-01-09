@@ -34,4 +34,9 @@ public interface ICtrlXboxInput {
      * Called when button Y is pressed
      */
     void onButtonYPressed();
+    
+    /**
+     * Called when Start button is pressed (toggle recording)
+     */
+    void onStartPressed();
 }

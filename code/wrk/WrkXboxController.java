@@ -28,12 +28,20 @@ public class WrkXboxController extends Thread {
     private XboxButton keyboardState;       // Keyboard-only state
     private static final int POLL_RATE = 50; // milliseconds
     
+    // Dead zones to prevent drift/noise
+    private static final double STICK_DEADZONE = 0.15;
+    private static final double TRIGGER_DEADZONE = 0.1;
+    
     // Previous state for button press detection
     private XboxButton previousState;
     
     // JInput controller
     private boolean jinputReady = false;
     private Controller gamepad = null;
+    
+    // Debug logging interval
+    private int debugCounter = 0;
+    private static final int DEBUG_LOG_INTERVAL = 100; // Log every 5 seconds (100 * 50ms)
     
     /**
      * Extract native libraries from jinput-platform jar to temp folder
@@ -73,7 +81,7 @@ public class WrkXboxController extends Thread {
                         File outFile = new File(tempDir, new File(entry.getName()).getName());
                         if (!outFile.exists()) {
                             try (InputStream in = jar.getInputStream(entry);
-                                 FileOutputStream out = new FileOutputStream(outFile)) {
+                                FileOutputStream out = new FileOutputStream(outFile)) {
                                 byte[] buffer = new byte[4096];
                                 int len;
                                 while ((len = in.read(buffer)) > 0) {
@@ -153,21 +161,30 @@ public class WrkXboxController extends Thread {
                 float value = comp.getPollData();
                 boolean isAnalog = comp.isAnalog();
                 
-                // Axes
+                // Axes - apply dead zones
                 if (id == Component.Identifier.Axis.X) {
-                    xboxButton.setLeftStickX(value);
+                    xboxButton.setLeftStickX(applyDeadzone(value, STICK_DEADZONE));
                 } else if (id == Component.Identifier.Axis.Y) {
-                    xboxButton.setLeftStickY(value);
+                    xboxButton.setLeftStickY(applyDeadzone(value, STICK_DEADZONE));
                 } else if (id == Component.Identifier.Axis.RX) {
-                    xboxButton.setRightStickX(value);
+                    xboxButton.setRightStickX(applyDeadzone(value, STICK_DEADZONE));
                 } else if (id == Component.Identifier.Axis.RY) {
-                    xboxButton.setRightStickY(value);
+                    xboxButton.setRightStickY(applyDeadzone(value, STICK_DEADZONE));
                 } else if (id == Component.Identifier.Axis.Z) {
-                    // Often left trigger
-                    xboxButton.setLeftTrigger((value + 1f) / 2f);
+                    // Z axis: can be combined triggers or left trigger depending on controller
+                    // XInput controllers: Z goes from -1 (LT full) to +1 (RT full) combined
+                    // DirectInput: Z might be 0 to 1 for one trigger
+                    double triggerValue = normalizeTriggersFromZ(value);
+                    // For combined axis, negative = LT, positive = RT
+                    if (triggerValue < 0) {
+                        xboxButton.setLeftTrigger(applyDeadzone(Math.abs(triggerValue), TRIGGER_DEADZONE));
+                    } else {
+                        xboxButton.setRightTrigger(applyDeadzone(triggerValue, TRIGGER_DEADZONE));
+                    }
                 } else if (id == Component.Identifier.Axis.RZ) {
-                    // Often right trigger
-                    xboxButton.setRightTrigger((value + 1f) / 2f);
+                    // RZ is often the right trigger on some controllers
+                    double triggerVal = (value + 1.0) / 2.0; // Normalize from [-1,1] to [0,1]
+                    xboxButton.setRightTrigger(applyDeadzone(triggerVal, TRIGGER_DEADZONE));
                 } else if (id == Component.Identifier.Axis.POV) {
                     // D-Pad as POV hat
                     if (value == Component.POV.UP) {
@@ -256,15 +273,23 @@ public class WrkXboxController extends Thread {
     /**
      * Updates button state from keyboard input (for testing without controller)
      * Can be called from JavaFX thread - updates separate keyboard state
+     * 
+     * Mapping:
+     * W / UP = RT (avancer), S / DOWN = LT (reculer)
+     * A / LEFT = tourner gauche, D / RIGHT = tourner droite
      */
     public void updateFromKeyboard(KeyEvent event, boolean pressed) {
         if (event.getCode() == KeyCode.W || event.getCode() == KeyCode.UP) {
-            keyboardState.setLeftStickY(pressed ? -1.0 : 0.0);
+            // W/UP = Right Trigger = avancer
+            keyboardState.setRightTrigger(pressed ? 1.0 : 0.0);
         } else if (event.getCode() == KeyCode.S || event.getCode() == KeyCode.DOWN) {
-            keyboardState.setLeftStickY(pressed ? 1.0 : 0.0);
+            // S/DOWN = Left Trigger = reculer
+            keyboardState.setLeftTrigger(pressed ? 1.0 : 0.0);
         } else if (event.getCode() == KeyCode.A || event.getCode() == KeyCode.LEFT) {
+            // A/LEFT = tourner à gauche (stick X négatif)
             keyboardState.setLeftStickX(pressed ? -1.0 : 0.0);
         } else if (event.getCode() == KeyCode.D || event.getCode() == KeyCode.RIGHT) {
+            // D/RIGHT = tourner à droite (stick X positif)
             keyboardState.setLeftStickX(pressed ? 1.0 : 0.0);
         } else if (event.getCode() == KeyCode.SPACE) {
             keyboardState.setButtonA(pressed);
@@ -282,6 +307,8 @@ public class WrkXboxController extends Thread {
             keyboardState.setLeftBumper(pressed);
         } else if (event.getCode() == KeyCode.E) {
             keyboardState.setRightBumper(pressed);
+        } else if (event.getCode() == KeyCode.R) {
+            keyboardState.setStart(pressed); // R = Toggle Recording (Start button)
         }
     }
     
@@ -324,6 +351,28 @@ public class WrkXboxController extends Thread {
     }
     
     /**
+     * Apply dead zone to an axis value
+     */
+    private double applyDeadzone(double value, double deadzone) {
+        if (Math.abs(value) < deadzone) {
+            return 0.0;
+        }
+        // Scale the remaining range to 0-1
+        double sign = value > 0 ? 1.0 : -1.0;
+        return sign * (Math.abs(value) - deadzone) / (1.0 - deadzone);
+    }
+    
+    /**
+     * Normalize trigger value from Z axis
+     * Some controllers use Z as combined triggers (-1 to +1)
+     * Others use Z as a single trigger (0 to 1 or -1 to 1)
+     */
+    private double normalizeTriggersFromZ(float value) {
+        // Return value as-is, the caller will handle negative (LT) vs positive (RT)
+        return value;
+    }
+    
+    /**
      * Combine keyboard and gamepad inputs - keyboard takes priority when active
      */
     private void combineInputs() {
@@ -333,6 +382,24 @@ public class WrkXboxController extends Thread {
         }
         if (Math.abs(keyboardState.getLeftStickY()) > 0.01) {
             xboxButton.setLeftStickY(keyboardState.getLeftStickY());
+        }
+        
+        // Triggers: use keyboard if it has input (for RT/LT movement)
+        if (keyboardState.getRightTrigger() > 0.01) {
+            xboxButton.setRightTrigger(keyboardState.getRightTrigger());
+        }
+        if (keyboardState.getLeftTrigger() > 0.01) {
+            xboxButton.setLeftTrigger(keyboardState.getLeftTrigger());
+        }
+        
+        // Debug logging
+        if (debugCounter++ % DEBUG_LOG_INTERVAL == 0) {
+            double lt = xboxButton.getLeftTrigger();
+            double rt = xboxButton.getRightTrigger();
+            double lx = xboxButton.getLeftStickX();
+            if (lt > 0.01 || rt > 0.01 || Math.abs(lx) > 0.01) {
+                System.out.printf("[XBOX DEBUG] LT=%.2f RT=%.2f StickX=%.2f%n", lt, rt, lx);
+            }
         }
         
         // Buttons: OR them together (either source can trigger)
@@ -350,19 +417,43 @@ public class WrkXboxController extends Thread {
     
     /**
      * Check for button press events (state change from false to true)
+     * Also triggers light vibration feedback on button press
      */
     private void checkButtonPress() {
+        boolean anyButtonPressed = false;
+        
         if (xboxButton.isButtonA() && !previousState.isButtonA()) {
             refCtrl.onButtonAPressed();
+            anyButtonPressed = true;
         }
         if (xboxButton.isButtonB() && !previousState.isButtonB()) {
             refCtrl.onButtonBPressed();
+            anyButtonPressed = true;
         }
         if (xboxButton.isButtonX() && !previousState.isButtonX()) {
             refCtrl.onButtonXPressed();
+            anyButtonPressed = true;
         }
         if (xboxButton.isButtonY() && !previousState.isButtonY()) {
             refCtrl.onButtonYPressed();
+            anyButtonPressed = true;
+        }
+        
+        // Start button for recording toggle
+        if (xboxButton.isStart() && !previousState.isStart()) {
+            refCtrl.onStartPressed();
+            anyButtonPressed = true;
+        }
+        
+        // Light vibration feedback on any button press
+        if (anyButtonPressed) {
+            WrkXboxVibration.vibrateLight(0);
+        }
+        
+        // Also vibrate on bumper presses
+        if ((xboxButton.isLeftBumper() && !previousState.isLeftBumper()) ||
+            (xboxButton.isRightBumper() && !previousState.isRightBumper())) {
+            WrkXboxVibration.vibrateLight(0);
         }
     }
     

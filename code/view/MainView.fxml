@@ -5,6 +5,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
@@ -149,6 +150,13 @@
          <children>
             <Label fx:id="lblBatterieRover" alignment="CENTER" text="Batterie rover : " />
             <Label fx:id="lblQualiteStreaming" text="Qualité du streaming : " />
+            <HBox alignment="CENTER" spacing="5.0">
+               <children>
+                  <Circle fx:id="recordIndicator" fill="GRAY" radius="8.0" stroke="BLACK" strokeType="INSIDE" />
+                  <ToggleButton fx:id="btnRecord" onAction="#toggleRecording" text="⏺ REC" style="-fx-background-color: #333; -fx-text-fill: white;" />
+                  <Label fx:id="lblRecordTime" text="00:00" style="-fx-text-fill: #ff4444;" />
+               </children>
+            </HBox>
             <Label fx:id="lblHostName">
                <font>
                   <Font size="27.0" />

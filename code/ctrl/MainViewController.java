@@ -8,6 +8,8 @@ package ctrl;
 import wrk.WrkEtatRobot;
 import wrk.WrkAudio;
 import wrk.WrkXboxController;
+import wrk.WrkVideoRecorder;
+import wrk.WrkXboxVibration;
 import bean.MyRobot;
 import bean.XboxButton;
 import ch.emf.info.robot.links.Robot;
@@ -39,6 +41,10 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
+import javafx.scene.control.ToggleButton;
 
 /**
  * FXML Controller class
@@ -73,6 +79,12 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
     private Label lblBatterieRover;
     @FXML
     private Label lblBatterieManette;
+    @FXML
+    private ToggleButton btnRecord;
+    @FXML
+    private Label lblRecordTime;
+    @FXML
+    private Circle recordIndicator;
 
     private Robot robot;
     private MyRobot myRobot;
@@ -82,6 +94,11 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
     private static final int STICK_MULTIPLIER = 200;
     private static final int MAX_SPEED = 2000;
     private boolean xboxControlEnabled = true; // Enabled by default for easier testing
+    
+    // Video recording
+    private WrkVideoRecorder wrkVideoRecorder;
+    private Timeline recordingTimer;
+    private long recordingStartTime;
 
     private ToggleButton btnJoystick;
     @FXML
@@ -101,6 +118,54 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
         // Initialize Xbox controller support
         wrkXboxController = new WrkXboxController(this);
         wrkXboxController.start();
+        
+        // Initialize video recorder
+        wrkVideoRecorder = new WrkVideoRecorder();
+        wrkVideoRecorder.setListener(new WrkVideoRecorder.VideoRecorderListener() {
+            @Override
+            public void onRecordingStarted(String filePath) {
+                // Double vibration pour indiquer le début de l'enregistrement
+                WrkXboxVibration.vibrateDoublePulse(0);
+                Platform.runLater(() -> {
+                    btnRecord.setSelected(true);
+                    btnRecord.setText("⏹ STOP");
+                    recordIndicator.setFill(Color.RED);
+                    startRecordingTimer();
+                });
+            }
+            
+            @Override
+            public void onRecordingStopped(String filePath, long durationMs, long frameCount) {
+                // Vibration de succès
+                WrkXboxVibration.vibrateSuccess(0);
+                Platform.runLater(() -> {
+                    btnRecord.setSelected(false);
+                    btnRecord.setText("⏺ REC");
+                    recordIndicator.setFill(Color.GRAY);
+                    stopRecordingTimer();
+                    lblRecordTime.setText("Sauvegardé!");
+                    WindowManager.afficherInfo("Vidéo enregistrée: " + filePath + "\nDurée: " + (durationMs/1000) + "s, Frames: " + frameCount);
+                });
+            }
+            
+            @Override
+            public void onRecordingError(String error) {
+                // Vibration d'erreur
+                WrkXboxVibration.vibrateError(0);
+                Platform.runLater(() -> {
+                    btnRecord.setSelected(false);
+                    btnRecord.setText("⏺ REC");
+                    recordIndicator.setFill(Color.GRAY);
+                    stopRecordingTimer();
+                    WindowManager.afficherErreur("Erreur enregistrement: " + error);
+                });
+            }
+            
+            @Override
+            public void onFrameRecorded(long frameNumber) {
+                // Optionnel: mise à jour du compteur de frames
+            }
+        });
         
         // Setup keyboard input for testing (when no physical Xbox controller)
         setupKeyboardInput();
@@ -183,7 +248,8 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
                code == javafx.scene.input.KeyCode.U ||
                code == javafx.scene.input.KeyCode.J ||
                code == javafx.scene.input.KeyCode.Q ||
-               code == javafx.scene.input.KeyCode.E;
+               code == javafx.scene.input.KeyCode.E ||
+               code == javafx.scene.input.KeyCode.R; // Toggle recording
     }
 
     @FXML
@@ -258,6 +324,63 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
     private void standUp(ActionEvent event) {
         robot.standUp();
     }
+    
+    // ========== Video Recording Methods ==========
+    
+    @FXML
+    private void toggleRecording(ActionEvent event) {
+        if (wrkVideoRecorder.isRecording()) {
+            stopRecording();
+        } else {
+            startRecording();
+        }
+    }
+    
+    private void startRecording() {
+        if (!robot.isConnected()) {
+            WindowManager.afficherAlerte("Connectez-vous au robot avant d'enregistrer.");
+            btnRecord.setSelected(false);
+            return;
+        }
+        
+        boolean started = wrkVideoRecorder.startRecording();
+        if (!started) {
+            btnRecord.setSelected(false);
+            WindowManager.afficherErreur("Impossible de démarrer l'enregistrement.");
+        }
+    }
+    
+    private void stopRecording() {
+        wrkVideoRecorder.stopRecording();
+    }
+    
+    private void startRecordingTimer() {
+        recordingStartTime = System.currentTimeMillis();
+        recordingTimer = new Timeline(new KeyFrame(Duration.seconds(1), e -> updateRecordingTime()));
+        recordingTimer.setCycleCount(Timeline.INDEFINITE);
+        recordingTimer.play();
+    }
+    
+    private void stopRecordingTimer() {
+        if (recordingTimer != null) {
+            recordingTimer.stop();
+            recordingTimer = null;
+        }
+    }
+    
+    private void updateRecordingTime() {
+        long elapsed = (System.currentTimeMillis() - recordingStartTime) / 1000;
+        long minutes = elapsed / 60;
+        long seconds = elapsed % 60;
+        lblRecordTime.setText(String.format("⏺ %02d:%02d", minutes, seconds));
+        
+        // Faire clignoter l'indicateur
+        if (elapsed % 2 == 0) {
+            recordIndicator.setFill(Color.RED);
+        } else {
+            recordIndicator.setFill(Color.DARKRED);
+        }
+    }
 
     @Override
     public void onBatteryReceived(int battery) {
@@ -279,6 +402,11 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
 
     @Override
     public void onImageReceived(byte[] image) {
+        // Envoyer la frame au recorder si enregistrement en cours
+        if (wrkVideoRecorder != null && wrkVideoRecorder.isRecording()) {
+            wrkVideoRecorder.addFrame(image);
+        }
+        
         Platform.runLater(() -> {
             imgView.setImage(new Image(new ByteArrayInputStream(image)));
         });
@@ -364,6 +492,15 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
     }
 
     private void close(Event event) {
+        // Arrêter l'enregistrement vidéo si en cours
+        if (wrkVideoRecorder != null && wrkVideoRecorder.isRecording()) {
+            wrkVideoRecorder.stopRecording();
+        }
+        if (wrkVideoRecorder != null) {
+            wrkVideoRecorder.dispose();
+        }
+        stopRecordingTimer();
+        
         ((Stage) (btnOnOff.getScene().getWindow())).close();
         wrkEtatRobot.setRunning(false);
         if (wrkXboxController != null) {
@@ -424,6 +561,9 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
     private short prevRightSpeed = 0;
     private boolean prevConnected = true;
     
+    // Dead zone threshold for input values
+    private static final double INPUT_DEADZONE = 0.1;
+    
     @Override
     public void onXboxInputReceived(XboxButton xboxButton) {
         if (!xboxControlEnabled) {
@@ -439,10 +579,25 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
         }
         prevConnected = true;
         
-        // Calculate robot speeds based on left stick input
-        // Y-axis: forward/backward, X-axis: turning
-        double forward = -xboxButton.getLeftStickY(); // Inverted because stick Y is negative when up
-        double turn = -xboxButton.getLeftStickX(); // INVERTED to fix left/right direction
+        // Get trigger values with dead zone
+        double rt = xboxButton.getRightTrigger();
+        double lt = xboxButton.getLeftTrigger();
+        double stickX = xboxButton.getLeftStickX();
+        
+        // Apply dead zones
+        rt = Math.abs(rt) < INPUT_DEADZONE ? 0 : rt;
+        lt = Math.abs(lt) < INPUT_DEADZONE ? 0 : lt;
+        stickX = Math.abs(stickX) < INPUT_DEADZONE ? 0 : stickX;
+        
+        // Calculate robot speeds based on triggers (RT/LT) for forward/backward
+        // RT (Right Trigger) = avancer, LT (Left Trigger) = reculer
+        // Left stick X-axis = tourner
+        double forward = lt - rt; // LT avance, RT recule (inversé pour correspondre au mapping physique)
+        double turn = -stickX; // Stick gauche pour tourner
+        
+        // Clamp forward and turn to [-1, 1]
+        forward = Math.max(-1.0, Math.min(1.0, forward));
+        turn = Math.max(-1.0, Math.min(1.0, turn));
         
         // Tank drive calculation
         // Left motor = forward - turn
@@ -457,13 +612,17 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
             rightPower /= maxPower;
         }
         
-        // Convert to robot speed values (-999 to 999)
-        short leftSpeed = (short) (leftPower * MAX_SPEED);
-        short rightSpeed = (short) (rightPower * MAX_SPEED);
+        // Convert to robot speed values (-MAX_SPEED to MAX_SPEED)
+        short leftSpeed = (short) Math.round(leftPower * MAX_SPEED);
+        short rightSpeed = (short) Math.round(rightPower * MAX_SPEED);
+        
+        // Clamp speeds to valid range
+        leftSpeed = (short) Math.max(-MAX_SPEED, Math.min(MAX_SPEED, leftSpeed));
+        rightSpeed = (short) Math.max(-MAX_SPEED, Math.min(MAX_SPEED, rightSpeed));
         
         // Apply speeds to robot (only log when changed)
         if (leftSpeed != prevLeftSpeed || rightSpeed != prevRightSpeed) {
-            System.out.printf("[XBOX] speeds L:%d R:%d%n", leftSpeed, rightSpeed);
+            System.out.printf("[XBOX] speeds L:%d R:%d (fwd=%.2f turn=%.2f)%n", leftSpeed, rightSpeed, forward, turn);
             prevLeftSpeed = leftSpeed;
             prevRightSpeed = rightSpeed;
         }
@@ -537,6 +696,21 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
             robot.setRightSpeed((short) 0);
             robot.setHeadDirection(RobotState.HeadDirection.NONE);
         }
+    }
+    
+    @Override
+    public void onStartPressed() {
+        // Toggle video recording
+        System.out.println("[XBOX] Start button pressed - Toggle Recording");
+        Platform.runLater(() -> {
+            if (wrkVideoRecorder.isRecording()) {
+                stopRecording();
+                System.out.println("[XBOX] Recording STOPPED");
+            } else {
+                startRecording();
+                System.out.println("[XBOX] Recording STARTED");
+            }
+        });
     }
 
     // ========== RobotListener implementation ==========
