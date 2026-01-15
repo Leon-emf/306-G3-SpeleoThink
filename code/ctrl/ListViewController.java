@@ -68,6 +68,10 @@ public class ListViewController implements Initializable, ICtrlEdit, Ctrl {
     private void openMainView(MyRobot robot) {
         Fenetre f = WindowManager.creerFenetre("view/MainView.fxml", "Pilotage");
         MainViewController ctrl = (MainViewController) f.getCtrl();
+        if (ctrl == null) {
+            WindowManager.afficherErreur("Impossible d'ouvrir la vue principale. Le contrôleur n'a pas pu être chargé.");
+            return;
+        }
         ctrl.setRobot(robot);
         f.getStage().setOnCloseRequest(e -> ctrl.onClose(e));
         f.show();

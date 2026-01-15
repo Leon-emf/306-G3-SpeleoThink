@@ -26,7 +26,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
  */
 public class WrkAudio   {
 
-    private static final String VOICE_RSS_API_KEY = "420b9119feff4990b01f091b3a4dbdbc";
+    private static final String VOICE_RSS_API_KEY = "df5c85e4de5340df9751c075a696e241";
     
     public WrkAudio() {
     }

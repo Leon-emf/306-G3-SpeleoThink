@@ -17,21 +17,9 @@
          <children>
             <VBox alignment="CENTER" prefHeight="170.0" prefWidth="530.0" spacing="10.0" styleClass="conteneur">
                <children>
-                  <Button id="plug-in" contentDisplay="TOP" mnemonicParsing="false" onAction="#connecterRobot" prefHeight="40.0" prefWidth="699.0" text="Se connecter à un robot">
-                     <font>
-                        <Font size="19.0" />
-                     </font>
-                  </Button>
-                  <Button id="wifi" contentDisplay="TOP" mnemonicParsing="false" onAction="#initialiserRobot" prefHeight="40.0" prefWidth="574.0" text="Initialiser un robot">
-                     <font>
-                        <Font size="19.0" />
-                     </font>
-                  </Button>
-                  <Button id="emergencyExit" contentDisplay="TOP" mnemonicParsing="false" onAction="#quitter" prefHeight="25.0" prefWidth="720.0" text="Quitter" textAlignment="CENTER">
-                     <font>
-                        <Font size="19.0" />
-                     </font>
-                  </Button>
+                  <Button id="plug-in" contentDisplay="LEFT" mnemonicParsing="false" onAction="#connecterRobot" prefHeight="55.0" prefWidth="450.0" text="Se connecter à un robot" style="-fx-font-size: 16px;" />
+                  <Button id="wifi" contentDisplay="LEFT" mnemonicParsing="false" onAction="#initialiserRobot" prefHeight="55.0" prefWidth="450.0" text="Initialiser un robot" style="-fx-font-size: 16px;" />
+                  <Button id="emergencyExit" contentDisplay="LEFT" mnemonicParsing="false" onAction="#quitter" prefHeight="55.0" prefWidth="450.0" text="Quitter" style="-fx-font-size: 16px;" styleClass="button-danger" />
                </children>
                <padding>
                   <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
@@ -43,11 +31,7 @@
    <top>
       <VBox alignment="CENTER">
          <children>
-            <Label text="API Robot 7Links - Application demo">
-               <font>
-                  <Font size="29.0" />
-               </font>
-            </Label>
+            <Label text="🤖 SpeleoThink Robot Control" style="-fx-font-size: 28px; -fx-font-weight: bold;" />
          </children>
       </VBox>
    </top>

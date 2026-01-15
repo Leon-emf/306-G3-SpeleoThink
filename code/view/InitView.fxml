@@ -9,48 +9,53 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane fx:id="pane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="394.0" prefWidth="510.0" styleClass="darktheme" stylesheets="@../resources/css/view.css" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ctrl.InitViewController">
+<BorderPane fx:id="pane" prefHeight="480.0" prefWidth="500.0" styleClass="darktheme" stylesheets="@../resources/css/view.css" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ctrl.InitViewController">
    <center>
-      <HBox BorderPane.alignment="CENTER">
+      <VBox spacing="12.0" styleClass="conteneur" style="-fx-padding: 20px;">
          <BorderPane.margin>
-            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+            <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
          </BorderPane.margin>
-         <children>
-            <VBox prefHeight="170.0" prefWidth="530.0" spacing="10.0" styleClass="conteneur">
-               <padding>
-                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-               </padding>
-               <children>
-                  <Label text="1) Allumez le robot et connectez vous sur son Wi-Fi (MDP: link2014)" />
-                  <Label text="2) Initialiser le robot" />
-                  <HBox alignment="CENTER_LEFT" spacing="10.0">
-                     <children>
-                        <Button fx:id="btnInit" mnemonicParsing="false" onAction="#init" text="Initialiser" />
-                        <Label fx:id="lblHostname" text="hostname" visible="false" />
-                     </children>
-                  </HBox>
-                  <Label text="3) Connecter le robot à un réseau Wi-Fi" />
-                  <HBox>
-                     <children>
-                        <Button fx:id="btnScanner" disable="true" mnemonicParsing="false" onAction="#scan" prefHeight="25.0" prefWidth="128.0" text="Scanner les réseaux" />
-                        <ProgressIndicator fx:id="loaderWifi" prefHeight="22.0" prefWidth="30.0" visible="false" />
-                     </children>
-                  </HBox>
-                  <ListView fx:id="lstWifi" prefHeight="122.0" prefWidth="26.0" />
-                  <Button fx:id="btnConnecter" disable="true" mnemonicParsing="false" onAction="#connect" prefHeight="25.0" prefWidth="524.0" text="Se connecter" />
-                  <Label text="4) Attendre la confirmation vocale du robot (&quot;I'm ready&quot;)" />
-                  <HBox spacing="5.0">
-                     <children>
-                        <Button fx:id="btnAnnuler" mnemonicParsing="false" onAction="#annuler" text="Annuler" />
-                        <Button fx:id="btnTerminer" disable="true" mnemonicParsing="false" onAction="#terminer" text="Terminer" />
-                     </children>
-                  </HBox>
-               </children>
-            </VBox>
-         </children>
-      </HBox>
+         
+         <!-- Titre -->
+         <Label text="Configuration du Robot" style="-fx-font-size: 20px; -fx-font-weight: bold;" />
+         
+         <!-- Étape 1 -->
+         <VBox spacing="4.0" style="-fx-padding: 8px; -fx-background-color: rgba(55,65,81,0.5); -fx-background-radius: 8px;">
+            <Label text="Étape 1 : Connexion Wi-Fi" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #60a5fa;" />
+            <Label text="Connectez-vous au Wi-Fi du robot (MDP: link2014)" style="-fx-font-size: 12px; -fx-text-fill: #9ca3af;" />
+         </VBox>
+         
+         <!-- Étape 2 -->
+         <VBox spacing="8.0" style="-fx-padding: 8px; -fx-background-color: rgba(55,65,81,0.5); -fx-background-radius: 8px;">
+            <Label text="Étape 2 : Initialisation" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #60a5fa;" />
+            <HBox alignment="CENTER_LEFT" spacing="12.0">
+               <Button fx:id="btnInit" mnemonicParsing="false" onAction="#init" text="Initialiser" prefWidth="120.0" />
+               <Label fx:id="lblHostname" text="" style="-fx-text-fill: #10b981; -fx-font-weight: bold;" />
+            </HBox>
+         </VBox>
+         
+         <!-- Étape 3 -->
+         <VBox spacing="8.0" style="-fx-padding: 12px; -fx-background-color: #1f2937; -fx-background-radius: 8px; -fx-border-color: #374151; -fx-border-radius: 8px; -fx-border-width: 1px;" VBox.vgrow="ALWAYS">
+            <Label text="Étape 3 : Réseau Wi-Fi" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #60a5fa;" />
+            <HBox spacing="10.0" alignment="CENTER_LEFT">
+               <Button fx:id="btnScanner" disable="true" mnemonicParsing="false" onAction="#scan" text="Scanner" prefWidth="100.0" />
+               <ProgressIndicator fx:id="loaderWifi" prefHeight="24.0" prefWidth="24.0" visible="false" />
+            </HBox>
+            <ListView fx:id="lstWifi" minHeight="100.0" prefHeight="140.0" VBox.vgrow="ALWAYS" />
+            <Button fx:id="btnConnecter" disable="true" mnemonicParsing="false" onAction="#connect" text="Se connecter au réseau" prefHeight="36.0" maxWidth="Infinity" styleClass="button-primary" />
+         </VBox>
+         
+         <!-- Étape 4 -->
+         <VBox spacing="8.0" style="-fx-padding: 8px; -fx-background-color: rgba(55,65,81,0.5); -fx-background-radius: 8px;">
+            <Label text="Étape 4 : Confirmation" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #60a5fa;" />
+            <Label text="Attendez que le robot dise &quot;I'm ready&quot;" style="-fx-font-size: 12px; -fx-text-fill: #9ca3af;" />
+         </VBox>
+         
+         <!-- Boutons -->
+         <HBox spacing="12.0" alignment="CENTER_RIGHT">
+            <Button fx:id="btnAnnuler" mnemonicParsing="false" onAction="#annuler" text="Annuler" prefWidth="100.0" styleClass="button-secondary" />
+            <Button fx:id="btnTerminer" disable="true" mnemonicParsing="false" onAction="#terminer" text="Terminer" prefWidth="100.0" styleClass="button-success" />
+         </HBox>
+      </VBox>
    </center>
-   <top>
-      <VBox alignment="CENTER" />
-   </top>
 </BorderPane>

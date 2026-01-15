@@ -10,7 +10,7 @@ package ctrl;
  * @author AudergonV01
  */
 public interface ICtrlEtatRobot {
-    void onBatteryReceived(byte battery);
+    void onBatteryReceived(int battery);
     void onImageReceived(byte[] image);
     void onAudioReceived(byte[] audio);
     void onConnectionStateReceived(boolean state);

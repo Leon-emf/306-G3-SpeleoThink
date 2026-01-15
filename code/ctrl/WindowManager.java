@@ -6,7 +6,6 @@
 package ctrl;
 
 import bean.Fenetre;
-import com.sun.scenario.Settings;
 import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
@@ -43,7 +42,9 @@ public class WindowManager {
             scene.getRoot().getStyleClass().add(THEME);
 
         } catch (IOException ex) {
-            System.out.println(ex.getLocalizedMessage() + "\n" + ex.getMessage());
+            System.err.println("Erreur lors du chargement de " + fxml + ":");
+            ex.printStackTrace();
+            afficherErreur("Impossible de charger la vue: " + fxml + "\n" + ex.getMessage());
         }
         return new Fenetre(ctrl, stage);
     }
