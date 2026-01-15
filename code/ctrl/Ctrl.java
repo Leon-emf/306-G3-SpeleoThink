@@ -7,7 +7,7 @@ package ctrl;
 
 /**
  *
- * @author AudergonV01
+ * @author Groupe 3 speleothink
  */
 public interface Ctrl {
     

@@ -41,7 +41,6 @@ public class EditViewController implements Initializable, Ctrl {
      */
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // TODO
     }
 
     public void setRefCtrl(ICtrlEdit refCtrl) {
