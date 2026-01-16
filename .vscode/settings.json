@@ -163,5 +163,6 @@
         "code/lib/com.sun.jna_5.14.0.v20231211-1200.jar",
         "code/lib/bfg-1.15.0.jar",
         "code/lib/bfg-1.13.0.jar"
-    ]
+    ],
+    "java.compile.nullAnalysis.mode": "automatic"
 }

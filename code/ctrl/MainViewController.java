@@ -74,10 +74,6 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
     @FXML
     private Label lblHostName;
     @FXML
-    private Label lblBatterieRover;
-    @FXML
-    private Label lblQualiteStreaming;
-    @FXML
     private Label lblBatterieManette;
     @FXML
     private ToggleButton btnRecord;
@@ -384,20 +380,7 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
 
     @Override
     public void onBatteryReceived(int battery) {
-        System.out.println("[BATTERY CALLBACK] Battery received: " + battery + "%");
-        Platform.runLater(() -> {
-            // Always display the battery value
-            lblBatterieRover.setText("Batterie rover : " + battery + "%");
-            
-            // Change color based on battery level
-            if (battery <= 20) {
-                lblBatterieRover.setStyle("-fx-text-fill: red;");
-            } else if (battery <= 50) {
-                lblBatterieRover.setStyle("-fx-text-fill: orange;");
-            } else {
-                lblBatterieRover.setStyle("-fx-text-fill: lime;");
-            }
-        });
+        // Battery display removed as it doesn't work
     }
 
     @Override
@@ -759,7 +742,6 @@ public class MainViewController implements Initializable, ICtrlEtatRobot, ICtrlX
         System.out.println("[ROBOT LISTENER] Connection lost!");
         Platform.runLater(() -> {
             connectionIndicator.setFill(Color.RED);
-            lblBatterieRover.setText("Batterie: --");
         });
     }
     
