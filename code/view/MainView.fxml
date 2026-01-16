@@ -129,8 +129,6 @@
    <top>
       <HBox alignment="CENTER" prefHeight="70.0" prefWidth="200.0" spacing="40.0" styleClass="conteneur" style="-fx-background-radius: 0; -fx-border-radius: 0; -fx-padding: 10px 20px;" BorderPane.alignment="CENTER">
          <children>
-            <Label fx:id="lblBatterieRover" alignment="CENTER" text="🔋 Batterie rover : " style="-fx-font-size: 13px;" />
-            <Label fx:id="lblQualiteStreaming" text="📶 Streaming : " style="-fx-font-size: 13px;" />
             <HBox alignment="CENTER" spacing="10.0" style="-fx-background-color: rgba(0,0,0,0.3); -fx-background-radius: 12px; -fx-padding: 8px 16px;">
                <children>
                   <Circle fx:id="recordIndicator" fill="#64748b" radius="10.0" stroke="TRANSPARENT" strokeType="INSIDE" />
