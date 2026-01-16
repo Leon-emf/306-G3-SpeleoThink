@@ -247,7 +247,7 @@
 }
 
 .list-cell:filled:hover {
-    -fx-background-color: #4b5563;
+    -fx-background-color: #60a5fa;
     -fx-background-radius: 4px;
 }
 
