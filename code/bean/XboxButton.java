@@ -232,7 +232,7 @@ public class XboxButton {
     public void setGuideButton(boolean guideButton) {
         this.guideButton = guideButton;
     }
-    
+
     /**
      * Apply deadzone to analog stick values to avoid drift
      * @param value The raw analog value
